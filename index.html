@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Asistanım</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #1b1530 0%, #0b0b14 55%, #060608 100%);
+    color: #eee;
+    margin: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Üst bar */
+  #ust {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(20,16,32,0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(124,77,255,0.25);
+    flex-shrink: 0;
+  }
+  #avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #7c4dff, #00e0ff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+    box-shadow: 0 0 14px rgba(124,77,255,0.6);
+  }
+  #baslik { font-weight: 600; font-size: 16px; }
+  #durum { font-size: 12px; color: #9aa0ff; display: flex; align-items: center; gap: 5px; }
+  #nokta { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+
+  #ust-sag { margin-left: auto; display: flex; gap: 6px; position: relative; }
+  .ust-buton {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(124,77,255,0.3);
+    background: rgba(255,255,255,0.05);
+    color: #cbb8ff;
+    font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ust-buton:active { transform: scale(0.9); }
+
+  #menu {
+    display: none;
+    position: absolute;
+    top: 42px; right: 0;
+    background: #1b1530;
+    border: 1px solid rgba(124,77,255,0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 20;
+    min-width: 170px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  #menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: #eee;
+    font-size: 14px;
+  }
+  #menu button:active { background: rgba(124,77,255,0.2); }
+  #menu button.tehlike { color: #ff8a8a; }
+  #menu hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0; }
+
+  /* Sekme şeridi */
+  #sekmeBar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    background: rgba(15,12,24,0.6);
+    border-bottom: 1px solid rgba(124,77,255,0.15);
+    flex-shrink: 0;
+  }
+  #sekmeBar::-webkit-scrollbar { height: 0; }
+  .sekme {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 10px 7px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(124,77,255,0.2);
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: #bbb;
+  }
+  .sekme.aktif {
+    background: linear-gradient(135deg, rgba(124,77,255,0.35), rgba(0,224,255,0.2));
+    border-color: #7c4dff;
+    color: #fff;
+  }
+  .sekme-sil {
+    background: none; border: none; color: #999;
+    font-size: 13px; padding: 2px 4px; line-height: 1;
+  }
+  .sekme.aktif .sekme-sil { color: #ddd; }
+
+  /* Sohbet alanı */
+  #sohbet {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #sohbet::-webkit-scrollbar { width: 0; }
+
+  .satir { display: flex; }
+  .satir.kullanici { justify-content: flex-end; }
+  .satir.asistan { justify-content: flex-start; }
+
+  .mesaj {
+    max-width: 78%;
+    padding: 11px 15px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    animation: gir 0.22s ease-out;
+  }
+  @keyframes gir {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .kullanici .mesaj {
+    background: linear-gradient(135deg, #7c4dff, #5b3df5);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .asistan .mesaj {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(124,77,255,0.25);
+    border-bottom-left-radius: 4px;
+  }
+  .hata .mesaj { border-color: rgba(255,80,80,0.5); color: #ffb4b4; }
+
+  /* Yazıyor animasyonu */
+  .yaziyor .mesaj { display: flex; gap: 4px; padding: 14px 16px; }
+  .yaziyor span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #b9a3ff;
+    animation: zipla 1s infinite ease-in-out;
+  }
+  .yaziyor span:nth-child(2) { animation-delay: 0.15s; }
+  .yaziyor span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes zipla {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Alt giriş alanı */
+  #alt {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(20,16,32,0.85);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(124,77,255,0.25);
+    flex-shrink: 0;
+  }
+  #alt-satir { display: flex; gap: 8px; }
+  #onizleme {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(124,77,255,0.12);
+    border: 1px solid rgba(124,77,255,0.3);
+    border-radius: 12px;
+    font-size: 13px;
+    color: #cbb;
+  }
+  #onizleme img { height: 36px; border-radius: 6px; }
+  #onizleme-kapat {
+    margin-left: auto;
+    background: none; border: none; color: #ff8a8a;
+    font-size: 16px; cursor: pointer; padding: 4px;
+  }
+  #ekle {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid rgba(124,77,255,0.35);
+    background: rgba(255,255,255,0.05);
+    color: #b9a3ff;
+    font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  #ekle:active { transform: scale(0.9); }
+  #resimBtn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,224,255,0.35);
+    background: rgba(255,255,255,0.05);
+    color: #7fe9ff;
+    font-size: 19px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  #resimBtn:active { transform: scale(0.9); }
+  .mesaj img {
+    max-width: 100%;
+    border-radius: 12px;
+    display: block;
+  }
+  .uretiliyor .mesaj {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: #b9a3ff;
+  }
+  .uretiliyor .donen {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(124,77,255,0.3);
+    border-top-color: #7c4dff;
+    border-radius: 50%;
+    animation: don 0.7s linear infinite;
+  }
+  @keyframes don { to { transform: rotate(360deg); } }
+  #soru {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(124,77,255,0.3);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+  }
+  #soru:focus { border-color: #7c4dff; box-shadow: 0 0 0 2px rgba(124,77,255,0.25); }
+  #soru::placeholder { color: #777; }
+  #gonder {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #7c4dff, #00e0ff);
+    color: white;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 14px rgba(124,77,255,0.5);
+    transition: transform 0.1s;
+  }
+  #gonder:active { transform: scale(0.9); }
+  /* Ayarlar modalı */
+  #ayarlarOverlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(6,6,10,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #ayarlarOverlay.acik { display: flex; }
+  #ayarlarKutu {
+    width: 100%; max-width: 380px;
+    background: linear-gradient(160deg, #1b1530, #0e0c18);
+    border: 1px solid rgba(124,77,255,0.4);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(124,77,255,0.3);
+  }
+  #ayarlarKutu h3 { margin: 0 0 10px; color: #fff; font-size: 18px; }
+  .ayarlarAciklama { font-size: 12.5px; color: #b8b3d0; margin: 0 0 16px; line-height: 1.4; }
+  #ayarlarKutu label { display: block; font-size: 13px; color: #9aa0ff; margin-bottom: 6px; font-weight: 600; }
+  #ayarlarKutu input {
+    width: 100%; padding: 10px 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(124,77,255,0.35);
+    border-radius: 10px;
+    color: #eee; font-size: 13px;
+    margin-bottom: 6px;
+    outline: none;
+  }
+  #ayarlarKutu input:focus { border-color: #00e0ff; }
+  .ayarlarLink { font-size: 11.5px; color: #777; margin: 0 0 16px; }
+  .ayarlarLink a { color: #00e0ff; text-decoration: none; }
+  #ayarlarBtnSatir { display: flex; gap: 10px; margin-top: 6px; }
+  #ayarlarBtnSatir button {
+    flex: 1; padding: 11px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  #ayarlarKaydetBtn { background: linear-gradient(135deg, #7c4dff, #00e0ff); color: #08070f; }
+  #ayarlarKapatBtn { background: rgba(255,255,255,0.08); color: #ddd; }
+</style>
+</head>
+<body>
+
+<div id="ust">
+  <div id="avatar">🤖</div>
+  <div>
+    <div id="baslik">Emir AI</div>
+    <div id="durum"><span id="nokta"></span> Çevrimiçi</div>
+  </div>
+  <div id="ust-sag">
+    <button class="ust-buton" id="yeniSekmeBtn" type="button" title="Yeni sekme">＋</button>
+    <button class="ust-buton" id="menuBtn" type="button" title="Menü">⋮</button>
+    <div id="menu">
+      <button id="ayarlarBtn">🔑 API Anahtarları</button>
+      <hr>
+      <button id="temizleBtn">🧹 Bu sohbeti temizle</button>
+      <hr>
+      <button id="sekmeSilBtn" class="tehlike">🗑️ Bu sekmeyi sil</button>
+    </div>
+  </div>
+</div>
+
+<div id="ayarlarOverlay">
+  <div id="ayarlarKutu">
+    <h3>🔑 API Anahtarları</h3>
+    <p class="ayarlarAciklama">Sohbet ve görsel üretme özelliklerinin çalışması için kendi ücretsiz API anahtarlarını gir. Anahtarların sadece bu cihazda saklanır, kimseyle paylaşılmaz.</p>
+    <label>OpenRouter API Anahtarı</label>
+    <input id="openrouterInput" type="text" placeholder="sk-or-v1-...">
+    <p class="ayarlarLink">Ücretsiz anahtar al: <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></p>
+    <label>Gemini API Anahtarı (görsel için)</label>
+    <input id="geminiInput" type="text" placeholder="AIza...">
+    <p class="ayarlarLink">Ücretsiz anahtar al: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
+    <div id="ayarlarBtnSatir">
+      <button id="ayarlarKaydetBtn">Kaydet</button>
+      <button id="ayarlarKapatBtn">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<div id="sekmeBar"></div>
+
+<div id="sohbet"></div>
+
+<div id="alt">
+  <div id="onizleme">
+    <span id="onizleme-metin"></span>
+    <button id="onizleme-kapat">✕</button>
+  </div>
+  <div id="alt-satir">
+    <input id="dosya" type="file" accept="image/*,video/*" style="display:none">
+    <button id="ekle" type="button" title="Dosya ekle">📎</button>
+    <button id="resimBtn" type="button" title="Görsel oluştur">🎨</button>
+    <input id="soru" type="text" placeholder="Mesaj yaz...">
+    <button id="gonder">➤</button>
+  </div>
+</div>
+
+<script>
+// API anahtarları artık koda gömülü değil; kullanıcı kendi anahtarını "🔑 API Anahtarları" menüsünden girer.
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODELLER = [
+  "openrouter/free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen3-coder:free",
+  "openai/gpt-oss-120b:free"
+];
+
+function openrouterAnahtarAl() {
+  return localStorage.getItem("emirai_openrouter_key") || "";
+}
+function geminiAnahtarAl() {
+  return localStorage.getItem("emirai_gemini_key") || "";
+}
+function geminiGorselUrlAl() {
+  return "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=" + geminiAnahtarAl();
+}
+
+const SISTEM_TALIMATI = "Senin adın Emir AI. Kim olduğun, hangi şirketin yaptığı veya hangi modeli kullandığın sorulursa, sadece 'Ben Emir AI'yim, Emir tarafından geliştirildim' de. ChatGPT, Llama, Meta, Gemini, Google, OpenRouter, OpenAI gibi isimleri ASLA söyleme.";
+
+// --- Ayarlar penceresi ---
+const ayarlarOverlay = document.getElementById("ayarlarOverlay");
+const openrouterInput = document.getElementById("openrouterInput");
+const geminiInput = document.getElementById("geminiInput");
+
+function ayarlariAc() {
+  openrouterInput.value = openrouterAnahtarAl();
+  geminiInput.value = geminiAnahtarAl();
+  ayarlarOverlay.classList.add("acik");
+}
+function ayarlariKapat() {
+  ayarlarOverlay.classList.remove("acik");
+}
+document.getElementById("ayarlarBtn").onclick = function() {
+  document.getElementById("menu").style.display = "none";
+  ayarlariAc();
+};
+document.getElementById("ayarlarKapatBtn").onclick = ayarlariKapat;
+document.getElementById("ayarlarKaydetBtn").onclick = function() {
+  localStorage.setItem("emirai_openrouter_key", openrouterInput.value.trim());
+  localStorage.setItem("emirai_gemini_key", geminiInput.value.trim());
+  ayarlariKapat();
+};
+ayarlarOverlay.onclick = function(e) {
+  if (e.target === ayarlarOverlay) ayarlariKapat();
+};
+
+let secilenDosya = null; // {mimeType, data, ad}
+let sekmeSayaci = 0;
+let sekmeler = []; // {id, ad, gecmis: [], mesajlar: [{metin, kimden, hata}]}
+let aktifId = null;
+
+const sohbetDiv = document.getElementById("sohbet");
+const sekmeBarDiv = document.getElementById("sekmeBar");
+
+function aktifSekme() {
+  return sekmeler.find(function(s) { return s.id === aktifId; });
+}
+
+function yeniSekmeOlustur() {
+  sekmeSayaci++;
+  const sekme = { id: sekmeSayaci, ad: "Sohbet " + sekmeSayaci, gecmis: [], mesajlar: [] };
+  sekmeler.push(sekme);
+  aktifId = sekme.id;
+  sekmeleriCiz();
+  sohbetiCiz();
+}
+
+function sekmeSec(id) {
+  aktifId = id;
+  sekmeleriCiz();
+  sohbetiCiz();
+}
+
+function sekmeSil(id) {
+  if (sekmeler.length <= 1) return;
+  const indeks = sekmeler.findIndex(function(s) { return s.id === id; });
+  sekmeler.splice(indeks, 1);
+  if (aktifId === id) {
+    aktifId = sekmeler[Math.max(0, indeks - 1)].id;
+  }
+  sekmeleriCiz();
+  sohbetiCiz();
+}
+
+function sekmeleriCiz() {
+  sekmeBarDiv.innerHTML = "";
+  sekmeler.forEach(function(s) {
+    const pill = document.createElement("div");
+    pill.className = "sekme" + (s.id === aktifId ? " aktif" : "");
+    const isim = document.createElement("span");
+    isim.textContent = s.ad;
+    pill.appendChild(isim);
+    if (sekmeler.length > 1) {
+      const sil = document.createElement("button");
+      sil.className = "sekme-sil";
+      sil.textContent = "✕";
+      sil.onclick = function(e) { e.stopPropagation(); sekmeSil(s.id); };
+      pill.appendChild(sil);
+    }
+    pill.onclick = function() { sekmeSec(s.id); };
+    sekmeBarDiv.appendChild(pill);
+  });
+}
+
+function sohbetiCiz() {
+  sohbetDiv.innerHTML = "";
+  const sekme = aktifSekme();
+  sekme.mesajlar.forEach(function(m) {
+    mesajCiz(m.metin, m.kimden, m.hata, m.gorsel);
+  });
+}
+
+function mesajCiz(metin, kimden, hata, gorsel) {
+  const satir = document.createElement("div");
+  satir.className = "satir " + kimden;
+  const mesaj = document.createElement("div");
+  mesaj.className = "mesaj";
+  if (gorsel) {
+    const img = document.createElement("img");
+    img.src = gorsel.src || ("data:" + gorsel.mimeType + ";base64," + gorsel.data);
+    mesaj.appendChild(img);
+    if (metin) {
+      const altYazi = document.createElement("div");
+      altYazi.style.marginTop = "6px";
+      altYazi.textContent = metin;
+      mesaj.appendChild(altYazi);
+    }
+  } else {
+    mesaj.textContent = metin;
+  }
+  satir.appendChild(mesaj);
+  if (hata) satir.classList.add("hata");
+  sohbetDiv.appendChild(satir);
+  satir.scrollIntoView({ behavior: "smooth", block: "end" });
+  return satir;
+}
+
+function mesajEkle(metin, kimden, hata, gorsel) {
+  aktifSekme().mesajlar.push({ metin: metin, kimden: kimden, hata: !!hata, gorsel: gorsel || null });
+  return mesajCiz(metin, kimden, hata, gorsel);
+}
+
+function yaziyorGoster() {
+  const satir = document.createElement("div");
+  satir.className = "satir asistan yaziyor";
+  satir.id = "yaziyor-gostergesi";
+  satir.innerHTML = '<div class="mesaj"><span></span><span></span><span></span></div>';
+  sohbetDiv.appendChild(satir);
+  satir.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function yaziyorKaldir() {
+  const el = document.getElementById("yaziyor-gostergesi");
+  if (el) el.remove();
+}
+
+document.getElementById("ekle").addEventListener("click", function() {
+  document.getElementById("dosya").click();
+});
+
+document.getElementById("dosya").addEventListener("change", function(e) {
+  const dosya = e.target.files[0];
+  if (!dosya) return;
+  const okuyucu = new FileReader();
+  okuyucu.onload = function() {
+    const base64 = okuyucu.result.split(",")[1];
+    secilenDosya = { mimeType: dosya.type, data: base64, ad: dosya.name };
+    document.getElementById("onizleme-metin").textContent =
+      (dosya.type.startsWith("video") ? "🎬 " : "🖼️ ") + dosya.name;
+    document.getElementById("onizleme").style.display = "flex";
+  };
+  okuyucu.readAsDataURL(dosya);
+});
+
+document.getElementById("onizleme-kapat").onclick = function() {
+  secilenDosya = null;
+  document.getElementById("dosya").value = "";
+  document.getElementById("onizleme").style.display = "none";
+};
+
+function gecmisToOpenRouterMesajlari(gecmis) {
+  const mesajlar = [{ role: "system", content: SISTEM_TALIMATI }];
+  gecmis.forEach(function(mesaj) {
+    let metin = "";
+    mesaj.parts.forEach(function(p) {
+      if (p.text) metin += p.text;
+      if (p.inlineData) metin += (metin ? " " : "") + "[Kullanıcı bir görsel/video gönderdi, bu sohbet modeli görselleri okuyamıyor]";
+    });
+    const rol = mesaj.role === "model" ? "assistant" : "user";
+    mesajlar.push({ role: rol, content: metin });
+  });
+  return mesajlar;
+}
+
+async function gonder() {
+  const input = document.getElementById("soru");
+  const soru = input.value.trim();
+  if (!soru && !secilenDosya) return;
+  const sekme = aktifSekme();
+
+  mesajEkle(soru || (secilenDosya.mimeType.startsWith("video") ? "🎬 Video gönderildi" : "🖼️ Görsel gönderildi"), "kullanici");
+  input.value = "";
+
+  const parcalar = [];
+  if (soru) parcalar.push({ text: soru });
+  if (secilenDosya) {
+    parcalar.push({ inlineData: { mimeType: secilenDosya.mimeType, data: secilenDosya.data } });
+  }
+  sekme.gecmis.push({ role: "user", parts: parcalar });
+
+  secilenDosya = null;
+  document.getElementById("dosya").value = "";
+  document.getElementById("onizleme").style.display = "none";
+
+  yaziyorGoster();
+  await openRouterIstegiGonder(sekme, 0);
+}
+
+async function openRouterIstegiGonder(sekme, modelIndeksi) {
+  const anahtar = openrouterAnahtarAl();
+  if (!anahtar) {
+    yaziyorKaldir();
+    mesajEkle("Sohbet için OpenRouter API anahtarı gerekiyor. Menüden 🔑 API Anahtarları'na girip anahtarını ekle.", "asistan", true);
+    return;
+  }
+  if (modelIndeksi >= OPENROUTER_MODELLER.length) {
+    yaziyorKaldir();
+    mesajEkle("Şu an tüm ücretsiz modeller dolu, biraz sonra tekrar dene.", "asistan", true);
+    return;
+  }
+  try {
+    const cevap = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + anahtar
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODELLER[modelIndeksi],
+        messages: gecmisToOpenRouterMesajlari(sekme.gecmis)
+      })
+    });
+    const sonuc = await cevap.json();
+
+    // Hata varsa (kota dolu, model bulunamadı vb.) sıradaki yedek modele geç
+    if (sonuc.error) {
+      return openRouterIstegiGonder(sekme, modelIndeksi + 1);
+    }
+
+    yaziyorKaldir();
+    try {
+      const metin = sonuc.choices[0].message.content;
+      mesajEkle(metin, "asistan");
+      sekme.gecmis.push({ role: "model", parts: [{ text: metin }] });
+    } catch (e) {
+      mesajEkle("Hata: " + JSON.stringify(sonuc), "asistan", true);
+    }
+  } catch (e) {
+    yaziyorKaldir();
+    mesajEkle("Bağlantı hatası: " + (e && e.message ? e.message : JSON.stringify(e)), "asistan", true);
+  }
+}
+
+document.getElementById("gonder").onclick = gonder;
+document.getElementById("soru").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") gonder();
+});
+document.getElementById("soru").addEventListener("focus", function() {
+  setTimeout(function() {
+    document.getElementById("soru").scrollIntoView({ behavior: "smooth", block: "end" });
+  }, 300);
+});
+
+// Görsel oluşturma
+async function gorselOlustur() {
+  const input = document.getElementById("soru");
+  const istem = input.value.trim();
+  if (!istem) {
+    input.placeholder = "Önce ne çizeyim onu yaz, sonra 🎨'ye bas...";
+    return;
+  }
+  if (!geminiAnahtarAl()) {
+    mesajEkle("Görsel oluşturmak için Gemini API anahtarı gerekiyor. Menüden 🔑 API Anahtarları'na girip anahtarını ekle.", "asistan", true);
+    return;
+  }
+  input.value = "";
+  mesajEkle("🎨 " + istem, "kullanici");
+
+  const yukleniyorSatir = document.createElement("div");
+  yukleniyorSatir.className = "satir asistan uretiliyor";
+  yukleniyorSatir.id = "uretiliyor-gostergesi";
+  yukleniyorSatir.innerHTML = '<div class="mesaj"><div class="donen"></div> Görsel oluşturuluyor...</div>';
+  sohbetDiv.appendChild(yukleniyorSatir);
+  yukleniyorSatir.scrollIntoView({ behavior: "smooth", block: "end" });
+
+  try {
+    const cevap = await fetch(geminiGorselUrlAl(), {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: istem }] }],
+        generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
+      })
+    });
+    const sonuc = await cevap.json();
+    const el = document.getElementById("uretiliyor-gostergesi");
+    if (el) el.remove();
+
+    const parcalar = sonuc.candidates && sonuc.candidates[0] && sonuc.candidates[0].content
+      ? sonuc.candidates[0].content.parts : [];
+    const gorselParca = parcalar.find(function(p) { return p.inlineData; });
+
+    if (gorselParca) {
+      mesajEkle("", "asistan", false, { mimeType: gorselParca.inlineData.mimeType, data: gorselParca.inlineData.data });
+    } else {
+      mesajEkle("Görsel oluşturulamadı: " + JSON.stringify(sonuc), "asistan", true);
+    }
+  } catch (e) {
+    const el = document.getElementById("uretiliyor-gostergesi");
+    if (el) el.remove();
+    mesajEkle("Bağlantı hatası: " + (e && e.message ? e.message : JSON.stringify(e)), "asistan", true);
+  }
+}
+
+document.getElementById("resimBtn").onclick = gorselOlustur;
+
+// Yeni sekme ve menü
+document.getElementById("yeniSekmeBtn").onclick = yeniSekmeOlustur;
+
+const menuDiv = document.getElementById("menu");
+document.getElementById("menuBtn").onclick = function(e) {
+  e.stopPropagation();
+  menuDiv.style.display = menuDiv.style.display === "block" ? "none" : "block";
+};
+document.addEventListener("click", function() {
+  menuDiv.style.display = "none";
+});
+
+document.getElementById("temizleBtn").onclick = function() {
+  const sekme = aktifSekme();
+  sekme.gecmis = [];
+  sekme.mesajlar = [];
+  sohbetiCiz();
+  menuDiv.style.display = "none";
+};
+
+document.getElementById("sekmeSilBtn").onclick = function() {
+  sekmeSil(aktifId);
+  menuDiv.style.display = "none";
+};
+
+// Başlangıç: ilk sekmeyi oluştur
+yeniSekmeOlustur();
+</script>
+</body>
+</html>
